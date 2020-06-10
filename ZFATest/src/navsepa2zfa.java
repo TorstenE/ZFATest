@@ -9,32 +9,26 @@ import tk.INI;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Vector;
-
 import tk.CSV;
-import tk.FileDir;
-import zfa.Adresse;
 import zfa.ZFATestSQL;
 
 public class navsepa2zfa {
 	
 	private ZFATestSQL _zfa;
 	
-	private String _dateiPfad;
-	
 	private String _readCSVPfad;
 	private String _moveCSVPfad;
 	
 	private File[] _csvDateien;
 	
-	private String _csvDatei;
 	private String _iniDatei;
 	private INI _iniHandler;
-	private CSV _csvHandler;
-	
 	public navsepa2zfa() {
 		
 		this._iniDatei = "src\\navsepa2zfa.ini";
@@ -135,10 +129,47 @@ public class navsepa2zfa {
 			debitor       = zeile.get("Debitor");
 			mandatsnummer = zeile.get("Mandatsnummer");
 			
-			sql = "'UPDATE sapdebitoren set mandatsreferenz = '" + mandatsnummer + "' WHERE sapdebitornummer = " + debitor + ";";
+			// 808809 ist Debitor "Egeler" für Testzwecke
+			// debitor = "808809";
+			
+			sql = "UPDATE sapdebitoren set mandatsreferenz = '" + mandatsnummer + "' WHERE sapdebitornummer = " + debitor + ";";
 				
 			System.out.println(sql);
-			// this._zfa.updateRecord(sql);
+			
+			try {
+				this._zfa.updateRecord(sql);
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+			}
+		}
+	}
+	
+	
+	public void _moveCSVFiles() {
+		
+		Path originFile;
+		Path targetDir;
+		Path targetFile;
+		
+		if (this._csvDateien.length > 0) {
+			
+			try {
+				for (File csvDatei : this._csvDateien) {
+
+					originFile = csvDatei.toPath();
+					targetDir   = Paths.get(this._moveCSVPfad);
+					targetFile  = targetDir.resolve(originFile.getFileName());
+					
+					if (Files.move(originFile, targetFile, REPLACE_EXISTING) != null) {
+						System.out.println("Datei verschoben");
+					}
+					else {
+						System.out.println("Datei " + csvDatei.getName() + " konnte nicht verschoben werden");
+					}
+				}
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+			}
 		}
 	}
 	
@@ -152,6 +183,8 @@ public class navsepa2zfa {
 		this._getCSVFiles();
 		
 		this._csvDateien2DB();
+		
+		this._moveCSVFiles();
 		
 		this._closeDB();
 		
@@ -174,25 +207,30 @@ class SepaCSV extends CSV {
 	public SepaCSV (String datei) {
 		
 		super(datei);
+		
+		this._dictContent = new ArrayList<Map<String, String>>();
+		
 	}
 	
 	public void Row(String[] cols) {
 		
-		String[] headline = {"Debitor", "Mandatsnummer"}; 
-		
-		Map<String, String> dictCols = this.makeCols2Dict(cols, headline);
+		Map<String, String> dictCols = this.makeCols2Dict(cols, null);
 		
 		String debitor        = dictCols.get("Debitor");
 		String mandatsnummer  = dictCols.get("Mandatsnummer");
 		
-		// Prüft ob es ein korrekte Mandatsreferenz ist 
-		// da in manchen Spalten hier z.B. auch "manuell" steht
-		// Die Debotor-Nummer darf nicht 0 sein
-		if (Integer.parseInt(debitor) > 0 && mandatsnummer != "" && mandatsnummer.substring(0, 4).contentEquals("TKL-")) {
+		// Die Debitor-Nummer darf nicht leer sein
+		if (debitor != null && !debitor.isEmpty() ) {
+			
+			// Prüft ob es ein korrekte Mandatsreferenz ist 
+			// da in manchen Spalten hier z.B. auch "manuell" steht
+			// Der Debotor-Nummer darf nicht 0 sein
+			if (Integer.parseInt(debitor) > 0 && mandatsnummer != "" && mandatsnummer.substring(0, 4).contentEquals("TKL-")) {
 
-			// Ist die Zeile korrekt, wird diese in den CSV-Content übernommen
-			System.out.println(debitor);
-			this._dictContent.add(dictCols);
+				// Ist die Zeile korrekt, wird diese in den CSV-Content übernommen
+				// System.out.println(debitor);
+				this._dictContent.add(dictCols);
+			}
 		}
 	}
 	
