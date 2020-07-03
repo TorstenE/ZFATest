@@ -3,24 +3,27 @@
  * 
  * Liest aus einer CSV-Datei die SEPA-Mandate ein
  * und schreibt diese in die das ZFA
+ * Danach wird die Datei in das Archiv-Verzeichnis verschoben
  */
 
 import tk.INI;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.text.SimpleDateFormat;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Map;
 import tk.CSV;
-import zfa.ZFATestSQL;
+import zfa.ZFASQL;
 
 public class navsepa2zfa {
 	
-	private ZFATestSQL _zfa;
+	private ZFASQL _zfa;
 	
 	private String _readCSVPfad;
 	private String _moveCSVPfad;
@@ -32,13 +35,13 @@ public class navsepa2zfa {
 	public navsepa2zfa() {
 		
 		this._iniDatei = "src\\navsepa2zfa.ini";
+	
+		this._zfa = new ZFASQL();
 	}
 
 	
 	private void _connectDB() {
 		
-		
-		this._zfa = new ZFATestSQL(null, null, null, null, null);
 		
 		if (!this._zfa.connect()) {
 			System.err.println("Es konnte keine Datenbankverbindung hergestellt werden");
@@ -68,6 +71,8 @@ public class navsepa2zfa {
 			this._readCSVPfad = this._iniHandler.get("NAV-SEPA", "readcsvpfad"); // P:\Kaufmännischer Service\Abrechnung\SEPA
 			this._moveCSVPfad = this._iniHandler.get("NAV-SEPA", "movecsvpfad"); // P:\Kaufmännischer Service\Abrechnung\SEPA\Archiv
 			
+			this._zfa.setHost(this._iniHandler.get("ZFA", "dbhost"));
+
 			// System.out.print(this._readCSVPfad);
 			// System.out.print(this._moveCSVPfad);
 				
@@ -150,6 +155,11 @@ public class navsepa2zfa {
 		Path originFile;
 		Path targetDir;
 		Path targetFile;
+
+		// Datum-String generieren
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd_HH-mm-ss");
+		Date now = new Date();
+		String strDate = sdf.format(now);
 		
 		if (this._csvDateien.length > 0) {
 			
@@ -158,7 +168,7 @@ public class navsepa2zfa {
 
 					originFile = csvDatei.toPath();
 					targetDir   = Paths.get(this._moveCSVPfad);
-					targetFile  = targetDir.resolve(originFile.getFileName());
+					targetFile  = targetDir.resolve(originFile.getFileName()+"_"+strDate);
 					
 					if (Files.move(originFile, targetFile, REPLACE_EXISTING) != null) {
 						System.out.println("Datei verschoben");
@@ -175,10 +185,10 @@ public class navsepa2zfa {
 	
 	
 	public void run() {
+
+		this._readINIDatei();
 		
 		this._connectDB();
-		
-		this._readINIDatei();
 		
 		this._getCSVFiles();
 		
