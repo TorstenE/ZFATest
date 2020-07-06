@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import tk.CSV;
+import tk.FileDir;
 import zfa.ZFASQL;
 
 public class navsepa2zfa {
@@ -104,7 +105,7 @@ public class navsepa2zfa {
 	/**
 	 * 
 	 */
-	private void _csvDateien2DB() {
+	private void _readCSVFiles() {
 		
 		if (this._csvDateien.length > 0) {
 			
@@ -150,10 +151,15 @@ public class navsepa2zfa {
 	}
 	
 	
-	public void _moveCSVFiles() {
+	private void _moveCSVFiles() {
+		
+		FileDir fileDir = new FileDir();
+		
+		String csvName;
+		String csvExt;
+		String csvNeuDatei;
 		
 		Path originFile;
-		Path targetDir;
 		Path targetFile;
 
 		// Datum-String generieren
@@ -166,9 +172,18 @@ public class navsepa2zfa {
 			try {
 				for (File csvDatei : this._csvDateien) {
 
-					originFile = csvDatei.toPath();
-					targetDir   = Paths.get(this._moveCSVPfad);
-					targetFile  = targetDir.resolve(originFile.getFileName()+"_"+strDate);
+					originFile  = csvDatei.toPath();
+					
+					// Dateiname ohne Pfad und Extension
+					csvName     = fileDir.stripExtension(csvDatei).getName();
+					// Extension ermitteln
+					csvExt      = fileDir.getExtension(csvDatei);
+					// Neuen Dateinamen zusammen setzen
+					// moveCSVPfad + Name + Datum + Extension
+					csvNeuDatei = this._moveCSVPfad + File.separator + csvName + "_" + strDate + "." + csvExt; 
+					
+					// Pfad aus neuem Dateiname generieren
+					targetFile  = Paths.get(csvNeuDatei);
 					
 					if (Files.move(originFile, targetFile, REPLACE_EXISTING) != null) {
 						System.out.println("Datei verschoben");
@@ -184,15 +199,35 @@ public class navsepa2zfa {
 	}
 	
 	
+	/**
+	 * Prüft ob das Archiv-Verzeichnis vorhanden ist
+	 * Wenn nicht, wird es angelegt.
+	 * 
+	 * @return
+	 */
+	private boolean _checkMovePfad() {
+		
+		File dir  = new File(this._moveCSVPfad); 
+		
+		FileDir filerDir = new FileDir();
+		
+		boolean result = filerDir.checkDir(dir, true);
+
+		return result;
+	}
+	
+	
 	public void run() {
 
 		this._readINIDatei();
 		
 		this._connectDB();
 		
+		this._checkMovePfad();
+		
 		this._getCSVFiles();
 		
-		this._csvDateien2DB();
+		this._readCSVFiles();
 		
 		this._moveCSVFiles();
 		
