@@ -33,6 +33,8 @@ public class navsepa2zfa {
 	
 	private String _iniDatei;
 	private INI _iniHandler;
+	
+	
 	public navsepa2zfa() {
 		
 		this._iniDatei = "src\\navsepa2zfa.ini";
@@ -163,7 +165,7 @@ public class navsepa2zfa {
 		Path targetFile;
 
 		// Datum-String generieren
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd_HH-mm-ss");
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 		Date now = new Date();
 		String strDate = sdf.format(now);
 		
@@ -181,6 +183,8 @@ public class navsepa2zfa {
 					// Neuen Dateinamen zusammen setzen
 					// moveCSVPfad + Name + Datum + Extension
 					csvNeuDatei = this._moveCSVPfad + File.separator + csvName + "_" + strDate + "." + csvExt; 
+					
+					System.out.print("CSV verschieben nach : "+csvNeuDatei);
 					
 					// Pfad aus neuem Dateiname generieren
 					targetFile  = Paths.get(csvNeuDatei);
@@ -269,7 +273,7 @@ public class navsepa2zfa {
 				// Prüft ob es ein korrekte Mandatsreferenz ist 
 				// da in manchen Spalten hier z.B. auch "manuell" steht
 				// Der Debotor-Nummer darf nicht 0 sein
-				if (Integer.parseInt(debitor) > 0 && mandatsnummer != "" && mandatsnummer.substring(0, 4).contentEquals("TKL-")) {
+				if (Integer.parseInt(debitor) > 0 && mandatsnummer != "" && mandatsnummer.length() > 5 && mandatsnummer.substring(0, 4).contentEquals("TKL-")) {
 	
 					// Ist die Zeile korrekt, wird diese in den CSV-Content übernommen
 					// System.out.println(debitor);
