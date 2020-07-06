@@ -242,46 +242,46 @@ public class navsepa2zfa {
 		action.run();
 	}
 	
-}
 
-class SepaCSV extends CSV {
-	
-	// Content ist ein Array mit einer HashMap
-	private ArrayList<Map<String, String>> _dictContent;
-	
-	public SepaCSV (String datei) {
+	class SepaCSV extends CSV {
 		
-		super(datei);
+		// Content ist ein Array mit einer HashMap
+		private ArrayList<Map<String, String>> _dictContent;
 		
-		this._dictContent = new ArrayList<Map<String, String>>();
-		
-	}
-	
-	public void Row(String[] cols) {
-		
-		Map<String, String> dictCols = this.makeCols2Dict(cols, null);
-		
-		String debitor        = dictCols.get("Debitor");
-		String mandatsnummer  = dictCols.get("Mandatsnummer");
-		
-		// Die Debitor-Nummer darf nicht leer sein
-		if (debitor != null && !debitor.isEmpty() ) {
+		public SepaCSV (String datei) {
 			
-			// Prüft ob es ein korrekte Mandatsreferenz ist 
-			// da in manchen Spalten hier z.B. auch "manuell" steht
-			// Der Debotor-Nummer darf nicht 0 sein
-			if (Integer.parseInt(debitor) > 0 && mandatsnummer != "" && mandatsnummer.substring(0, 4).contentEquals("TKL-")) {
-
-				// Ist die Zeile korrekt, wird diese in den CSV-Content übernommen
-				// System.out.println(debitor);
-				this._dictContent.add(dictCols);
+			super(datei);
+			
+			this._dictContent = new ArrayList<Map<String, String>>();
+			
+		}
+		
+		public void Row(String[] cols) {
+			
+			Map<String, String> dictCols = this.makeCols2Dict(cols, null);
+			
+			String debitor        = dictCols.get("Debitor");
+			String mandatsnummer  = dictCols.get("Mandatsnummer");
+			
+			// Die Debitor-Nummer darf nicht leer sein
+			if (debitor != null && !debitor.isEmpty() ) {
+				
+				// Prüft ob es ein korrekte Mandatsreferenz ist 
+				// da in manchen Spalten hier z.B. auch "manuell" steht
+				// Der Debotor-Nummer darf nicht 0 sein
+				if (Integer.parseInt(debitor) > 0 && mandatsnummer != "" && mandatsnummer.substring(0, 4).contentEquals("TKL-")) {
+	
+					// Ist die Zeile korrekt, wird diese in den CSV-Content übernommen
+					// System.out.println(debitor);
+					this._dictContent.add(dictCols);
+				}
 			}
 		}
-	}
-	
-	
-	public ArrayList<Map<String, String>> getDictContent() {
 		
-		return this._dictContent;
+		
+		public ArrayList<Map<String, String>> getDictContent() {
+			
+			return this._dictContent;
+		}
 	}
 }
