@@ -34,10 +34,13 @@ public class navsepa2zfa {
 	private String _iniDatei;
 	private INI _iniHandler;
 	
+	private int _error;
+	
 	
 	public navsepa2zfa() {
 		
 		this._iniDatei = "src\\navsepa2zfa.ini";
+		this._error = 0;
 	
 		this._zfa = new ZFASQL();
 	}
@@ -48,7 +51,8 @@ public class navsepa2zfa {
 		
 		if (!this._zfa.connect()) {
 			System.err.println("Es konnte keine Datenbankverbindung hergestellt werden");
-			System.exit(-1);
+			this._error = 1;
+			this._exit();
 		}
 	}
 
@@ -60,6 +64,7 @@ public class navsepa2zfa {
 			this._zfa.close();
 			
 		} catch (Exception e) {
+			this._error = 1;
 			System.err.println(e.getMessage());
 		}
 	}
@@ -80,6 +85,7 @@ public class navsepa2zfa {
 			// System.out.print(this._moveCSVPfad);
 				
 		} catch (Exception e) {
+			this._error = 1;
 			System.err.println(e.getMessage());
 		}
 	}
@@ -147,6 +153,7 @@ public class navsepa2zfa {
 			try {
 				this._zfa.updateRecord(sql);
 			} catch (Exception e) {
+				this._error = 1;
 				System.err.println(e.getMessage());
 			}
 		}
@@ -190,13 +197,15 @@ public class navsepa2zfa {
 					targetFile  = Paths.get(csvNeuDatei);
 					
 					if (Files.move(originFile, targetFile, REPLACE_EXISTING) != null) {
-						System.out.println("Datei verschoben");
+						System.out.println("Ok - Datei verschoben");
 					}
 					else {
-						System.out.println("Datei " + csvDatei.getName() + " konnte nicht verschoben werden");
+						this._error = 1;
+						System.out.println("Fehler - Datei " + csvDatei.getName() + " konnte nicht verschoben werden");
 					}
 				}
 			} catch (Exception e) {
+				this._error = 1;
 				System.err.println(e.getMessage());
 			}
 		}
@@ -220,6 +229,19 @@ public class navsepa2zfa {
 		return result;
 	}
 	
+	/**
+	 * Beendet das Programm
+	 * 
+	 * Mit %ERRORLEVEL% kann in einer Batch-Datei auf
+	 * 0 = keine Fehler
+	 * 1 = Fehler
+	 * geprüft werden
+	 */
+	private void _exit() {
+		
+		System.exit(this._error);
+	}
+	
 	
 	public void run() {
 
@@ -237,7 +259,10 @@ public class navsepa2zfa {
 		
 		this._closeDB();
 		
+		this._exit();
 	}
+	
+	
 	public static void main (String[] ags) {
 		
 		// Programm starten
